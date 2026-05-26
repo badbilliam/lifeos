@@ -171,6 +171,9 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
   <div class="logo">LIFE OS</div>
   <div class="header-right">
     <div class="date-chip" id="hdr-date"></div>
+    <label style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r-sm);padding:5px 12px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">
+      ↑ Import<input type="file" accept=".json" style="display:none" onchange="importData(this)"/>
+    </label>
     <button class="save-btn" onclick="exportAll()">↓ Export</button>
   </div>
 </div>
@@ -917,6 +920,22 @@ function addFoodEntry(entry){
   renderAll();showToast('Added: '+entry.name);
 }
 
+
+function importData(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const imported=JSON.parse(e.target.result);
+      const keys=['bodyLog','foodLog','gymLog','uploads','accounts','habits','habitLog','supps','suppLog','goals','journal','mood','nGoals','foodPresets'];
+      keys.forEach(k=>{if(imported[k]!==undefined){state[k]=imported[k];S.set(k,imported[k]);}});
+      if(imported.nid){state.nid=imported.nid;S.set('nid',imported.nid);}
+      renderAll();showToast('Data restored successfully');
+    }catch(err){showToast('Import failed — invalid file');}
+  };
+  r.readAsText(file);
+  input.value='';
+}
 
 function exportAll(){
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
