@@ -483,19 +483,23 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
   <!-- Net Worth Summary -->
   <div class="section">Net worth</div>
   <div class="card">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
       <div class="stat-tile">
         <div class="stat-label">Net worth</div>
-        <div class="stat-val" id="f-total" style="font-size:18px;color:var(--blue)">$0</div>
+        <div class="stat-val" id="f-total" style="font-size:16px;color:var(--blue)">$0</div>
         <div style="font-size:10px;margin-top:3px" id="f-nw-change"></div>
       </div>
       <div class="stat-tile">
-        <div class="stat-label">Assets</div>
-        <div class="stat-val" id="f-assets" style="font-size:18px;color:var(--green)">$0</div>
+        <div class="stat-label">Total assets</div>
+        <div class="stat-val" id="f-assets" style="font-size:16px;color:var(--green)">$0</div>
       </div>
       <div class="stat-tile">
-        <div class="stat-label">Debt</div>
-        <div class="stat-val" id="f-debt" style="font-size:18px;color:var(--red)">$0</div>
+        <div class="stat-label">Total debt</div>
+        <div class="stat-val" id="f-debt" style="font-size:16px;color:var(--red)">$0</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Equity (assets−debt)</div>
+        <div class="stat-val" id="f-equity" style="font-size:16px;color:var(--purple)">$0</div>
       </div>
     </div>
     <div style="margin-bottom:10px" id="f-equity-bar"></div>
@@ -537,6 +541,32 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
         <div style="height:70px"><canvas id="chart-stock"></canvas></div>
       </div>
       <div id="list-stock" style="padding:4px 14px 10px"></div>
+    </div>
+  </div>
+
+  <div id="section-realestate" style="display:none;margin-bottom:10px">
+    <div style="background:var(--bg2);border:0.5px solid rgba(167,139,250,0.4);border-radius:14px;overflow:hidden">
+      <div style="padding:14px 14px 6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div style="font-size:12px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em">🏠 Real Estate</div>
+          <div style="font-size:22px;font-weight:700;font-family:Space Mono,monospace;color:#a78bfa;text-align:right" id="sec-re-total">$0</div>
+        </div>
+        <div style="height:70px"><canvas id="chart-realestate"></canvas></div>
+      </div>
+      <div id="list-realestate" style="padding:4px 14px 10px"></div>
+    </div>
+  </div>
+
+  <div id="section-physical" style="display:none;margin-bottom:10px">
+    <div style="background:var(--bg2);border:0.5px solid rgba(34,211,238,0.4);border-radius:14px;overflow:hidden">
+      <div style="padding:14px 14px 6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div style="font-size:12px;font-weight:700;color:#22d3ee;text-transform:uppercase;letter-spacing:.08em">💎 Possessions</div>
+          <div style="font-size:22px;font-weight:700;font-family:Space Mono,monospace;color:#22d3ee;text-align:right" id="sec-phys-total">$0</div>
+        </div>
+        <div style="height:70px"><canvas id="chart-physical"></canvas></div>
+      </div>
+      <div id="list-physical" style="padding:4px 14px 10px"></div>
     </div>
   </div>
 
@@ -1755,10 +1785,13 @@ function renderAll(){
 
   // Finance dashboard
   const totalAssetVal=state.accounts.filter(a=>a.type!=='Loan').reduce((s,a)=>s+a.balance,0);
-  const totalLoanVal=state.accounts.filter(a=>a.type==='Loan').reduce((s,a)=>s+a.balance,0)+state.loans.reduce((s,l)=>s+l.balance,0);
+  const totalLoanVal=state.accounts.filter(a=>a.type==='Loan').reduce((s,a)=>s+a.balance,0)+(state.loans||[]).reduce((s,l)=>s+l.balance,0);
   const netWorth=totalAssetVal-totalLoanVal;
   const dnw=document.getElementById('d-networth');if(dnw)dnw.textContent=fmtUSD(netWorth);
   const ftot=document.getElementById('f-total');if(ftot)ftot.textContent=fmtUSD(netWorth);
+  const faEl=document.getElementById('f-assets');if(faEl)faEl.textContent=fmtUSD(totalAssetVal);
+  const fdEl=document.getElementById('f-debt');if(fdEl)fdEl.textContent=fmtUSD(totalLoanVal);
+  const feEl=document.getElementById('f-equity');if(feEl)feEl.textContent=fmtUSD(totalAssetVal);
 
   // Gym dashboard
   const lastGym=state.gymLog[0];
@@ -1978,50 +2011,63 @@ function renderAll(){
   const cryptoA=state.accounts.filter(a=>a.type==='Crypto');
   const stockA=state.accounts.filter(a=>a.type==='Stock');
   const loanA=state.accounts.filter(a=>a.type==='Loan');
-  const cashA=state.accounts.filter(a=>!['Crypto','Stock','Loan'].includes(a.type));
+  const realEstA=state.accounts.filter(a=>a.type==='RealEstate');
+  const physA=state.accounts.filter(a=>a.type==='Physical');
+  const cashA=state.accounts.filter(a=>['Cash','Retirement','Other'].includes(a.type));
 
   const crypTotal=cryptoA.reduce((s,a)=>s+a.balance,0);
   const stokTotal=stockA.reduce((s,a)=>s+a.balance,0);
   const loanTot=loanA.reduce((s,a)=>s+a.balance,0);
+  const reTotal=realEstA.reduce((s,a)=>s+a.balance,0);
+  const physTotal=physA.reduce((s,a)=>s+a.balance,0);
   const cashTotal=cashA.reduce((s,a)=>s+a.balance,0);
 
-  // Daily change — sum of (qty * dayChange per unit) for market assets
   const crypDayChg=cryptoA.reduce((s,a)=>s+(a.dayChange||0)*(a.qty||0),0);
   const stokDayChg=stockA.reduce((s,a)=>s+(a.dayChange||0)*(a.qty||0),0);
   const nwDayChg=crypDayChg+stokDayChg;
 
   function fmtChg(chg,base){
-    if(!chg)return'';
-    const pct=base>0?(chg/base*100).toFixed(2):'0.00';
+    if(!chg||chg===0)return'';
+    const pct=base>0?(Math.abs(chg)/base*100).toFixed(2):'0.00';
     const col=chg>=0?'#34d399':'#f87171';
     return`<span style="color:${col}">${chg>=0?'+':''}${fmtUSD(chg)} (${chg>=0?'+':''}${pct}%)</span>`;
   }
 
+  // Show/hide sections
   const _sc=document.getElementById('section-crypto');if(_sc)_sc.style.display=cryptoA.length?'block':'none';
   const _ss=document.getElementById('section-stock');if(_ss)_ss.style.display=stockA.length?'block':'none';
   const _sl=document.getElementById('section-loan');if(_sl)_sl.style.display=loanA.length?'block':'none';
+  const _sre=document.getElementById('section-realestate');if(_sre)_sre.style.display=realEstA.length?'block':'none';
+  const _sph=document.getElementById('section-physical');if(_sph)_sph.style.display=physA.length?'block':'none';
   const _sca=document.getElementById('section-cash');if(_sca)_sca.style.display=cashA.length?'block':'none';
 
+  // Totals
   const _ct=document.getElementById('sec-crypto-total');if(_ct)_ct.textContent='$'+fmt(crypTotal);
   const _st=document.getElementById('sec-stock-total');if(_st)_st.textContent='$'+fmt(stokTotal);
   const _lt=document.getElementById('sec-loan-total');if(_lt)_lt.textContent='-$'+fmt(loanTot);
+  const _ret=document.getElementById('sec-re-total');if(_ret)_ret.textContent='$'+fmt(reTotal);
+  const _pht=document.getElementById('sec-phys-total');if(_pht)_pht.textContent='$'+fmt(physTotal);
   const _cat=document.getElementById('sec-cash-total');if(_cat)_cat.textContent='$'+fmt(cashTotal);
 
+  // Daily change labels
   const _cc=document.getElementById('sec-crypto-change');if(_cc)_cc.innerHTML=fmtChg(crypDayChg,crypTotal);
   const _sc2=document.getElementById('sec-stock-change');if(_sc2)_sc2.innerHTML=fmtChg(stokDayChg,stokTotal);
   const _nwc=document.getElementById('f-nw-change');if(_nwc)_nwc.innerHTML=fmtChg(nwDayChg,netWorth);
 
+  // Render lists
   const _lc=document.getElementById('list-crypto');if(_lc)_lc.innerHTML=cryptoA.map(renderAssetRow).join('');
   const _ls=document.getElementById('list-stock');if(_ls)_ls.innerHTML=stockA.map(renderAssetRow).join('');
   const _ll=document.getElementById('list-loan');if(_ll)_ll.innerHTML=loanA.map(renderAssetRow).join('');
+  const _lre=document.getElementById('list-realestate');if(_lre)_lre.innerHTML=realEstA.map(renderAssetRow).join('');
+  const _lph=document.getElementById('list-physical');if(_lph)_lph.innerHTML=physA.map(renderAssetRow).join('');
   const _lca=document.getElementById('list-cash');if(_lca)_lca.innerHTML=cashA.map(renderAssetRow).join('');
 
   function drawSparkline(id,color,val){
     const ctx=document.getElementById(id);if(!ctx)return;
     const hist=state.nwHistory.slice(-20);
-    const totalNow=Math.max(1,state.accounts.filter(a=>a.type!=='Loan').reduce((s,a)=>s+a.balance,0));
+    const totalNow=Math.max(1,totalAssetVal);
     const ratio=val/totalNow;
-    const pts=hist.length>1?hist.map(h=>Math.round(Math.abs(h.value)*ratio)):[val,val];
+    const pts=hist.length>1?hist.map(h=>Math.round(Math.abs(h.value+totalLoanVal)*ratio)):[val,val];
     const lbls=hist.length>1?hist.map(h=>h.date.slice(5)):['',''];
     makeChart(id,'line',lbls,[{data:pts,borderColor:color,backgroundColor:color+'18',borderWidth:2,pointRadius:0,tension:.4,fill:true}],{
       scales:{x:{display:false},y:{display:false}},
@@ -2031,6 +2077,8 @@ function renderAll(){
   if(cryptoA.length)drawSparkline('chart-crypto','#fbbf24',crypTotal);
   if(stockA.length)drawSparkline('chart-stock','#60a5fa',stokTotal);
   if(loanA.length)drawSparkline('chart-loan','#f87171',loanTot);
+  if(realEstA.length)drawSparkline('chart-realestate','#a78bfa',reTotal);
+  if(physA.length)drawSparkline('chart-physical','#22d3ee',physTotal);
   if(cashA.length)drawSparkline('chart-cash','#34d399',cashTotal);
   // Top chart: always line chart of net worth history
   if(document.getElementById('nw-chart')){
