@@ -483,23 +483,19 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
   <!-- Net Worth Summary -->
   <div class="section">Net worth</div>
   <div class="card">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
       <div class="stat-tile">
         <div class="stat-label">Net worth</div>
-        <div class="stat-val" id="f-total" style="font-size:16px;color:var(--blue)">$0</div>
+        <div class="stat-val" id="f-total" style="font-size:15px;color:var(--blue)">$0</div>
         <div style="font-size:10px;margin-top:3px" id="f-nw-change"></div>
       </div>
       <div class="stat-tile">
-        <div class="stat-label">Total assets</div>
-        <div class="stat-val" id="f-assets" style="font-size:16px;color:var(--green)">$0</div>
+        <div class="stat-label">Assets</div>
+        <div class="stat-val" id="f-assets" style="font-size:15px;color:var(--green)">$0</div>
       </div>
       <div class="stat-tile">
-        <div class="stat-label">Total debt</div>
-        <div class="stat-val" id="f-debt" style="font-size:16px;color:var(--red)">$0</div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-label">Equity (assets−debt)</div>
-        <div class="stat-val" id="f-equity" style="font-size:16px;color:var(--purple)">$0</div>
+        <div class="stat-label">Debt</div>
+        <div class="stat-val" id="f-debt" style="font-size:15px;color:var(--red)">$0</div>
       </div>
     </div>
     <div style="margin-bottom:10px" id="f-equity-bar"></div>
@@ -1791,7 +1787,6 @@ function renderAll(){
   const ftot=document.getElementById('f-total');if(ftot)ftot.textContent=fmtUSD(netWorth);
   const faEl=document.getElementById('f-assets');if(faEl)faEl.textContent=fmtUSD(totalAssetVal);
   const fdEl=document.getElementById('f-debt');if(fdEl)fdEl.textContent=fmtUSD(totalLoanVal);
-  const feEl=document.getElementById('f-equity');if(feEl)feEl.textContent=fmtUSD(totalAssetVal);
 
   // Gym dashboard
   const lastGym=state.gymLog[0];
@@ -2080,18 +2075,25 @@ function renderAll(){
   if(realEstA.length)drawSparkline('chart-realestate','#a78bfa',reTotal);
   if(physA.length)drawSparkline('chart-physical','#22d3ee',physTotal);
   if(cashA.length)drawSparkline('chart-cash','#34d399',cashTotal);
-  // Top chart: always line chart of net worth history
+  // Top chart: 3 lines — net worth (blue), assets (green), debt (red)
   if(document.getElementById('nw-chart')){
     if(state.nwHistory.length>0){
       const hist=state.nwHistory.slice(-60);
       const labels=hist.map(h=>h.date.slice(5));
-      const data=hist.map(h=>h.value);
-      makeChart('nw-chart','line',labels,[{data,borderColor:'#60a5fa',backgroundColor:'#60a5fa22',borderWidth:2,pointRadius:hist.length<20?3:0,tension:.4,fill:true}]);
+      const nwData=hist.map(h=>h.value);
+      // Estimate assets and debt from history using today's ratio
+      const assetRatio=totalAssetVal>0?totalAssetVal/(netWorth||1):1;
+      const debtRatio=totalLoanVal>0?totalLoanVal/(totalAssetVal||1):0;
+      const assetData=hist.map(h=>Math.round(Math.abs(h.value)*(assetRatio)));
+      const debtData=hist.map(h=>Math.round(assetData[hist.indexOf(h)]*debtRatio));
+      const pr=hist.length<20?3:0;
+      makeChart('nw-chart','line',labels,[
+        {label:'Net Worth',data:nwData,borderColor:'#60a5fa',backgroundColor:'transparent',borderWidth:2.5,pointRadius:pr,tension:.4,fill:false},
+        {label:'Assets',data:assetData,borderColor:'#34d399',backgroundColor:'transparent',borderWidth:2,pointRadius:pr,tension:.4,fill:false},
+        {label:'Debt',data:debtData,borderColor:'#f87171',backgroundColor:'transparent',borderWidth:2,pointRadius:pr,tension:.4,fill:false}
+      ],{plugins:{legend:{display:true,position:'bottom',labels:{color:'#888',font:{size:10},boxWidth:20,padding:8}}}});
     } else {
-      // No history yet — show placeholder
       if(chartInstances['nw-chart'])chartInstances['nw-chart'].destroy();
-      const ctx=document.getElementById('nw-chart');
-      if(ctx){const c2=ctx.getContext('2d');c2.clearRect(0,0,ctx.width,ctx.height);}
     }
   }
 
