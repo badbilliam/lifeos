@@ -644,12 +644,17 @@ function todayFood(){return state.foodLog[todayKey()]||[]}
 function logFood(){
   const name=document.getElementById('f-name').value.trim();
   if(!name){showToast('Enter food name');return}
-  addFoodEntry({name,
-    cals:parseFloat(document.getElementById('f-cals').value)||0,
-    prot:parseFloat(document.getElementById('f-prot').value)||0,
-    carbs:parseFloat(document.getElementById('f-carbs').value)||0,
-    fat:parseFloat(document.getElementById('f-fat').value)||0
-  });
+  const cals=parseFloat(document.getElementById('f-cals').value)||0;
+  const prot=parseFloat(document.getElementById('f-prot').value)||0;
+  const carbs=parseFloat(document.getElementById('f-carbs').value)||0;
+  const fat=parseFloat(document.getElementById('f-fat').value)||0;
+  addFoodEntry({name,cals,prot,carbs,fat});
+  const exists=state.foodPresets.find(p=>p.name.toLowerCase()===name.toLowerCase());
+  if(!exists){
+    state.foodPresets.push({id:state.nid++,name,serving:'1 serving',cals,prot,carbs,fat,fiber:0,sugar:0,sodium:0,ca:0,fe:0,k:0,vitd:0});
+    save('foodPresets');S.set('nid',state.nid);
+    showToast('Added + saved as preset');
+  }
   ['f-name','f-cals','f-prot','f-carbs','f-fat'].forEach(id=>document.getElementById(id).value='');
 }
 
