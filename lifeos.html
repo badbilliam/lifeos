@@ -492,12 +492,64 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
     <div style="height:140px"><canvas id="nw-chart"></canvas></div>
   </div>
 
-  <!-- Assets & Liabilities list -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px">
-    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">All assets & liabilities</div>
-    <button onclick="openAddAsset()" style="width:32px;height:32px;border-radius:50%;background:var(--green);border:none;color:#000;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+  <!-- Assets sectioned layout -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">All assets &amp; liabilities</div>
+    <button onclick="openAddAsset()" style="width:32px;height:32px;border-radius:50%;background:var(--green);border:none;color:#000;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
   </div>
-  <div class="card" id="account-list"></div>
+
+  <div id="section-crypto" style="display:none;margin-bottom:10px">
+    <div style="background:var(--bg2);border:0.5px solid rgba(251,191,36,0.4);border-radius:14px;overflow:hidden">
+      <div style="padding:14px 14px 6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:.08em">Crypto</div>
+          <div style="font-size:22px;font-weight:700;font-family:Space Mono,monospace;color:#fbbf24" id="sec-crypto-total">$0</div>
+        </div>
+        <div style="height:70px"><canvas id="chart-crypto"></canvas></div>
+      </div>
+      <div id="list-crypto" style="padding:4px 14px 10px"></div>
+    </div>
+  </div>
+
+  <div id="section-stock" style="display:none;margin-bottom:10px">
+    <div style="background:var(--bg2);border:0.5px solid rgba(96,165,250,0.4);border-radius:14px;overflow:hidden">
+      <div style="padding:14px 14px 6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.08em">Stocks</div>
+          <div style="font-size:22px;font-weight:700;font-family:Space Mono,monospace;color:#60a5fa" id="sec-stock-total">$0</div>
+        </div>
+        <div style="height:70px"><canvas id="chart-stock"></canvas></div>
+      </div>
+      <div id="list-stock" style="padding:4px 14px 10px"></div>
+    </div>
+  </div>
+
+  <div id="section-other" style="display:none;margin-bottom:10px">
+    <div style="background:var(--bg2);border:0.5px solid rgba(52,211,153,0.4);border-radius:14px;overflow:hidden">
+      <div style="padding:14px 14px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:12px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:.08em">Other assets</div>
+          <div style="font-size:22px;font-weight:700;font-family:Space Mono,monospace;color:#34d399" id="sec-other-total">$0</div>
+        </div>
+      </div>
+      <div id="list-other" style="padding:0 14px 10px"></div>
+    </div>
+  </div>
+
+  <div id="section-loan" style="display:none;margin-bottom:10px">
+    <div style="background:var(--bg2);border:0.5px solid rgba(248,113,113,0.4);border-radius:14px;overflow:hidden">
+      <div style="padding:14px 14px 6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.08em">Loans &amp; debt</div>
+          <div style="font-size:22px;font-weight:700;font-family:Space Mono,monospace;color:#f87171" id="sec-loan-total">$0</div>
+        </div>
+        <div style="height:70px"><canvas id="chart-loan"></canvas></div>
+      </div>
+      <div id="list-loan" style="padding:4px 14px 10px"></div>
+    </div>
+  </div>
+
+  <div id="account-list" style="display:none"></div>
 
   <!-- Add asset modal overlay -->
   <div id="add-asset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;overflow-y:auto;padding:20px 14px calc(20px + var(--safe-bottom))" onclick="if(event.target===this)closeAddAsset()">
@@ -1862,39 +1914,75 @@ function renderAll(){
     }
   }
 
-  // Finance — unified assets + loans
-  const typeColors2={Cash:'#34d399',Stock:'#60a5fa',Crypto:'#fbbf24',RealEstate:'#a78bfa',Physical:'#22d3ee',Retirement:'#f472b6',Loan:'#f87171',Other:'#888'};
-  const al=document.getElementById('account-list');
-  if(al){
-    const allItems=state.accounts;
-    al.innerHTML=allItems.length===0?'<div class="empty">No assets yet — add one below</div>'
-      :allItems.map(a=>{
-        const isLoan=a.type==='Loan';
-        const col=typeColors2[a.type]||'#888';
-        const displayVal=isLoan?-Math.abs(a.balance):a.balance;
-        const valColor=isLoan?'var(--red)':'var(--green)';
-        const qtyLabel=['Stock','Crypto'].includes(a.type)&&a.qty?(a.ticker?a.ticker+' · ':'')+a.qty+' units':'';
-        return`<div style="padding:10px 0;border-bottom:0.5px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:28px;height:28px;border-radius:7px;background:${col}22;color:${col};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${(a.ticker||a.type).slice(0,4)}</div>
-            <div style="flex:1">
-              <div style="font-size:14px;font-weight:500;color:var(--text)">${a.name}</div>
-              <div style="font-size:11px;color:var(--text2)">${a.type}${qtyLabel?' · '+qtyLabel:''}${a.price?' · $'+parseFloat(a.price).toLocaleString()+'/unit':''}</div>
-            </div>
-            <div style="font-size:16px;font-weight:700;font-family:Space Mono,monospace;color:${valColor}">${isLoan?'-':''}$${fmt(Math.abs(a.balance))}</div>
-            <button class="list-del" onclick="removeAccount(${a.id})">×</button>
-          </div>
-          <div style="display:flex;gap:6px;align-items:center;margin-top:8px">
-            <input type="number" value="${Math.abs(a.balance)}" placeholder="${isLoan?'Balance owed':'Value ($)'}"
-              style="flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;font-family:Space Mono,monospace"
-              onchange="updateAccountBalance(${a.id},this.value)"/>
-            ${['Stock','Crypto'].includes(a.type)?`<input type="number" value="${a.qty}" placeholder="Units" style="width:80px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-size:13px;outline:none" onchange="updateAccountQty(${a.id},this.value)"/>`:''}
-            <span style="font-size:10px;color:var(--text3)">${isLoan?'update balance':'edit value'}</span>
-          </div>
-        </div>`;
-      }).join('');
+  // Finance — sectioned by asset class
+  function renderAssetRow(a){
+    const isLoan=a.type==='Loan';
+    const isMarket=['Stock','Crypto'].includes(a.type);
+    const tcol={Cash:'#34d399',Stock:'#60a5fa',Crypto:'#fbbf24',RealEstate:'#a78bfa',Physical:'#22d3ee',Retirement:'#f472b6',Loan:'#f87171',Other:'#888'};
+    const col=tcol[a.type]||'#888';
+    const valColor=isLoan?'#f87171':'var(--green)';
+    const priceStr=a.price&&a.price>0?' · $'+parseFloat(a.price).toLocaleString('en-US',{maximumFractionDigits:2})+'/unit':'';
+    const qtyStr=isMarket&&a.qty?a.qty+' units'+priceStr:'';
+    return`<div style="padding:10px 0;border-bottom:0.5px solid rgba(255,255,255,0.05)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:8px;background:${col}20;color:${col};font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${(a.ticker||a.name).slice(0,4).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;color:var(--text)">${a.name}</div>
+          <div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${qtyStr||a.type}</div>
+        </div>
+        <div style="font-size:16px;font-weight:700;font-family:Space Mono,monospace;color:${valColor};flex-shrink:0">${isLoan?'-':''}$${fmt(Math.abs(a.balance))}</div>
+        <button class="list-del" onclick="removeAccount(${a.id})">×</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:8px">
+        <input type="number" value="${Math.abs(a.balance)||''}" placeholder="${isLoan?'Balance owed':'Value'}"
+          style="flex:1;background:var(--bg3);border:0.5px solid ${col}44;border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;font-family:Space Mono,monospace"
+          onchange="updateAccountBalance(${a.id},this.value)"/>
+        ${isMarket?`<input type="number" value="${a.qty||''}" placeholder="Units" style="width:72px;background:var(--bg3);border:0.5px solid ${col}44;border-radius:6px;padding:6px 8px;color:var(--text);font-size:13px;outline:none;font-family:Space Mono,monospace" onchange="updateAccountQty(${a.id},this.value)"/>` :''}
+        <span style="font-size:10px;color:var(--text3)">${isLoan?'balance':'edit'}</span>
+      </div>
+    </div>`;
   }
 
+  const cryptoA=state.accounts.filter(a=>a.type==='Crypto');
+  const stockA=state.accounts.filter(a=>a.type==='Stock');
+  const loanA=state.accounts.filter(a=>a.type==='Loan');
+  const otherA=state.accounts.filter(a=>!['Crypto','Stock','Loan'].includes(a.type));
+
+  const crypTotal=cryptoA.reduce((s,a)=>s+a.balance,0);
+  const stokTotal=stockA.reduce((s,a)=>s+a.balance,0);
+  const loanTot=loanA.reduce((s,a)=>s+a.balance,0);
+  const othrTotal=otherA.reduce((s,a)=>s+a.balance,0);
+
+  const _sc=document.getElementById('section-crypto');if(_sc)_sc.style.display=cryptoA.length?'block':'none';
+  const _ss=document.getElementById('section-stock');if(_ss)_ss.style.display=stockA.length?'block':'none';
+  const _sl=document.getElementById('section-loan');if(_sl)_sl.style.display=loanA.length?'block':'none';
+  const _so=document.getElementById('section-other');if(_so)_so.style.display=otherA.length?'block':'none';
+
+  const _ct=document.getElementById('sec-crypto-total');if(_ct)_ct.textContent='$'+fmt(crypTotal);
+  const _st=document.getElementById('sec-stock-total');if(_st)_st.textContent='$'+fmt(stokTotal);
+  const _lt=document.getElementById('sec-loan-total');if(_lt)_lt.textContent='-$'+fmt(loanTot);
+  const _ot=document.getElementById('sec-other-total');if(_ot)_ot.textContent='$'+fmt(othrTotal);
+
+  const _lc=document.getElementById('list-crypto');if(_lc)_lc.innerHTML=cryptoA.map(renderAssetRow).join('');
+  const _ls=document.getElementById('list-stock');if(_ls)_ls.innerHTML=stockA.map(renderAssetRow).join('');
+  const _ll=document.getElementById('list-loan');if(_ll)_ll.innerHTML=loanA.map(renderAssetRow).join('');
+  const _lo=document.getElementById('list-other');if(_lo)_lo.innerHTML=otherA.map(renderAssetRow).join('');
+
+  function drawSparkline(id,color,val){
+    const ctx=document.getElementById(id);if(!ctx)return;
+    const hist=state.nwHistory.slice(-20);
+    const totalNow=Math.max(1,state.accounts.filter(a=>a.type!=='Loan').reduce((s,a)=>s+a.balance,0));
+    const ratio=val/totalNow;
+    const pts=hist.length>1?hist.map(h=>Math.round(Math.abs(h.value)*ratio)):[val,val];
+    const lbls=hist.length>1?hist.map(h=>h.date.slice(5)):['',''];
+    makeChart(id,'line',lbls,[{data:pts,borderColor:color,backgroundColor:color+'18',borderWidth:2,pointRadius:0,tension:.4,fill:true}],{
+      scales:{x:{display:false},y:{display:false}},
+      plugins:{legend:{display:false},tooltip:{enabled:false}}
+    });
+  }
+  if(cryptoA.length)drawSparkline('chart-crypto','#fbbf24',crypTotal);
+  if(stockA.length)drawSparkline('chart-stock','#60a5fa',stokTotal);
+  if(loanA.length)drawSparkline('chart-loan','#f87171',loanTot);
   // Top chart: always line chart of net worth history
   if(document.getElementById('nw-chart')){
     if(state.nwHistory.length>0){
