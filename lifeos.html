@@ -738,7 +738,23 @@ const S={
   set(k,v){try{localStorage.setItem('los_'+k,JSON.stringify(v))}catch{}}
 };
 
-function todayKey(){return new Date().toISOString().slice(0,10)}
+function todayKey(){
+  // Use Eastern Time with 4am rollover — day turns at 4am ET not midnight UTC
+  const now=new Date();
+  // ET offset: EST = UTC-5, EDT = UTC-4
+  // Detect DST: second Sunday in March through first Sunday in November
+  const yr=now.getUTCFullYear();
+  const dstStart=new Date(Date.UTC(yr,2,1));
+  dstStart.setUTCDate(8-((dstStart.getUTCDay()+6)%7)); // 2nd Sunday March
+  const dstEnd=new Date(Date.UTC(yr,10,1));
+  dstEnd.setUTCDate(1+(7-dstEnd.getUTCDay())%7); // 1st Sunday November
+  const isDST=now>=dstStart&&now<dstEnd;
+  const etOffset=isDST?-4:-5; // EDT=-4, EST=-5
+  // Shift to ET then subtract 4 hours so day rolls at 4am ET
+  const etMs=now.getTime()+(etOffset*60*60*1000)-(4*60*60*1000);
+  const etDate=new Date(etMs);
+  return etDate.toISOString().slice(0,10);
+}
 let viewDate=todayKey();
 function fmtViewDate(){
   const d=new Date(viewDate+'T12:00:00');
@@ -760,7 +776,7 @@ function jumpToToday(){
   document.getElementById('hdr-date').textContent=fmtViewDate();
   renderAll();
 }
-function monthKey(){return new Date().toISOString().slice(0,7)}
+function monthKey(){return todayKey().slice(0,7)}
 function fmt(n,d=0){return isNaN(n)?'—':parseFloat(Number(n).toFixed(d)).toLocaleString()}
 function fmtUSD(n){return '$'+fmt(n)}
 
