@@ -516,7 +516,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
     <div style="background:var(--bg2);border:0.5px solid rgba(251,191,36,0.4);border-radius:14px;overflow:hidden">
       <div style="padding:14px 14px 6px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:12px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:.08em">₿ Crypto</div>
+          <div style="font-size:12px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:.08em">₿ Bitcoin</div>
           <div style="text-align:right">
             <div style="font-size:22px;font-weight:700;font-family:Space Mono,monospace;color:#fbbf24" id="sec-crypto-total">$0</div>
             <div style="font-size:11px;margin-top:2px" id="sec-crypto-change"></div>
@@ -606,7 +606,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
   <div id="account-list" style="display:none"></div>
 
   <!-- Add asset modal overlay -->
-  <div id="add-asset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;overflow-y:auto;padding:20px 14px calc(20px + var(--safe-bottom))" onclick="if(event.target===this)closeAddAsset()">
+  <div id="add-asset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(var(--safe-top,0px) + 16px) 14px calc(20px + var(--safe-bottom))" onclick="if(event.target===this)closeAddAsset()">
     <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius,14px);padding:20px;max-width:460px;margin:0 auto;position:relative">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div style="font-size:16px;font-weight:600;color:var(--text)">Add asset / liability</div>
@@ -618,7 +618,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
         <div style="font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:500">What type of asset?</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <button class="asset-type-btn" onclick="selectAssetType('Stock')" style="padding:14px;border-radius:10px;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-family:Space Grotesk,sans-serif;font-size:14px;font-weight:500">📈 Stock</button>
-          <button class="asset-type-btn" onclick="selectAssetType('Crypto')" style="padding:14px;border-radius:10px;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-family:Space Grotesk,sans-serif;font-size:14px;font-weight:500">₿ Crypto</button>
+          <button class="asset-type-btn" onclick="selectAssetType('Crypto')" style="padding:14px;border-radius:10px;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-family:Space Grotesk,sans-serif;font-size:14px;font-weight:500">₿ Bitcoin</button>
           <button class="asset-type-btn" onclick="selectAssetType('Cash')" style="padding:14px;border-radius:10px;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-family:Space Grotesk,sans-serif;font-size:14px;font-weight:500">🏦 Cash</button>
           <button class="asset-type-btn" onclick="selectAssetType('RealEstate')" style="padding:14px;border-radius:10px;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-family:Space Grotesk,sans-serif;font-size:14px;font-weight:500">🏠 Real Estate</button>
           <button class="asset-type-btn" onclick="selectAssetType('Retirement')" style="padding:14px;border-radius:10px;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-family:Space Grotesk,sans-serif;font-size:14px;font-weight:500">📊 Retirement</button>
@@ -1224,9 +1224,9 @@ function selectAssetType(type){
   document.getElementById('modal-step-1').style.display='none';
   document.getElementById('modal-step-2').style.display='block';
   const isMarket=['Stock','Crypto'].includes(type);
-  const labels={Cash:'Amount ($)',Stock:'Number of shares',Crypto:'Number of coins/tokens',RealEstate:'Property value ($)',Physical:'Asset value ($)',Retirement:'Balance ($)',Loan:'Balance owed ($)',Other:'Value ($)'};
+  const labels={Cash:'Amount ($)',Stock:'Number of shares',Crypto:'Amount of Bitcoin (BTC)',RealEstate:'Property value ($)',Physical:'Asset value ($)',Retirement:'Balance ($)',Loan:'Balance owed ($)',Other:'Value ($)'};
   const names={Cash:'Account name (e.g. Chase Checking)',RealEstate:'Property description',Physical:'Asset description',Retirement:'Account name (e.g. 401k)',Loan:'Loan name (e.g. Home loan)',Other:'Asset name'};
-  document.getElementById('modal-type-label').textContent=type;
+  document.getElementById('modal-type-label').textContent=type==='Crypto'?'Bitcoin':type;
   document.getElementById('modal-qty-label').textContent=labels[type]||'Amount';
   document.getElementById('modal-ticker-section').style.display=isMarket?'block':'none';
   document.getElementById('modal-name-section').style.display=isMarket?'none':'block';
@@ -1769,6 +1769,23 @@ function progBar(label,val,goal,unit,color){
   </div>`;
 }
 
+// ── Asset edit panel helpers ─────────────────────────────────
+function toggleEdit(id){
+  const sid=String(id);
+  const el=document.getElementById(sid);
+  if(!el){console.warn('toggleEdit: element not found:',sid);return;}
+  const isOpen=el.style.display==='block';
+  document.querySelectorAll('[id^="edit-"]').forEach(p=>{p.style.display='none';});
+  el.style.display=isOpen?'none':'block';
+}
+
+function updateCostBasis(id,val){
+  const a=state.accounts.find(x=>x.id===id);
+  if(!a)return;
+  a.costBasis=parseFloat(val)||0;
+  save('accounts');renderAll();
+}
+
 // ── Render All ────────────────────────────────────────────
 function renderAll(){
   const todayBody=state.bodyLog.find(e=>e.date===viewDate);
@@ -2008,7 +2025,7 @@ function renderAll(){
     const totalGain=costBasis>0?parseFloat((a.balance-costBasis).toFixed(2)):null;
     const gainCol=totalGain===null?'#888':totalGain>=0?'#34d399':'#f87171';
 
-    const editId='edit-'+a.id;
+    const editId='edit-'+String(a.id);
 
     return`<div style="padding:14px 0;border-bottom:0.5px solid rgba(255,255,255,0.06);cursor:pointer" onclick="toggleEdit('${editId}')">
       <div style="display:flex;align-items:center;gap:12px">
@@ -2076,21 +2093,7 @@ function renderAll(){
     </div>`;
   }
 
-  function toggleEdit(id){
-    const el=document.getElementById(id);
-    if(!el)return;
-    const isOpen=el.style.display!=='none';
-    // Close all other open edit panels first
-    document.querySelectorAll('[id^="edit-"]').forEach(p=>{p.style.display='none';});
-    el.style.display=isOpen?'none':'block';
-  }
-
-  function updateCostBasis(id,val){
-    const a=state.accounts.find(x=>x.id===id);
-    if(!a)return;
-    a.costBasis=parseFloat(val)||0;
-    save('accounts');renderAll();
-  }
+  // toggleEdit and updateCostBasis defined globally below
 
   const cryptoA=state.accounts.filter(a=>a.type==='Crypto');
   const stockA=state.accounts.filter(a=>a.type==='Stock');
@@ -2121,7 +2124,7 @@ function renderAll(){
   const summaryEl=document.getElementById('portfolio-summary');
   if(summaryEl){
     const rows=[
-      {label:'Crypto',val:crypTotal,chg:crypDayChg,color:'#fbbf24',icon:'₿'},
+      {label:'Bitcoin',val:crypTotal,chg:crypDayChg,color:'#fbbf24',icon:'₿'},
       {label:'Stocks',val:stokTotal,chg:stokDayChg,color:'#60a5fa',icon:'📈'},
       {label:'Real Estate',val:reTotal,chg:0,color:'#a78bfa',icon:'🏠'},
       {label:'Possessions',val:physTotal,chg:0,color:'#22d3ee',icon:'💎'},
