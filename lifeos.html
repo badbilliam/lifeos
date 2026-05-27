@@ -308,7 +308,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
           <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Weight (all sets)</div>
           <div style="font-family:Space Mono,monospace;font-size:20px;font-weight:700;color:var(--purple)" id="ex-weight-display">135 lbs</div>
         </div>
-        <input type="range" id="ex-weight-slider" min="5" max="250" step="5" value="135"
+        <input type="range" id="ex-weight-slider" min="0" max="500" step="5" value="135"
           style="width:100%;accent-color:var(--purple);cursor:pointer"
           oninput="updateDefaultWeight(this.value)"/>
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px"><span>5</span><span>125</span><span>250</span></div>
@@ -480,26 +480,30 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 <!-- ═══ FINANCE ═══ -->
 <div id="page-finance" class="page">
 
-  <!-- Net Worth Summary -->
-  <div class="section">Net worth</div>
-  <div class="card">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-      <div class="stat-tile">
-        <div class="stat-label">Net worth</div>
-        <div class="stat-val" id="f-total" style="font-size:15px;color:var(--blue)">$0</div>
-        <div style="font-size:10px;margin-top:3px" id="f-nw-change"></div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-label">Assets</div>
-        <div class="stat-val" id="f-assets" style="font-size:15px;color:var(--green)">$0</div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-label">Debt</div>
-        <div class="stat-val" id="f-debt" style="font-size:15px;color:var(--red)">$0</div>
-      </div>
+  <!-- Finance Header — Coinbase style -->
+  <div style="padding:8px 0 4px">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Total assets</div>
+    <div style="font-size:38px;font-weight:700;font-family:Space Mono,monospace;color:var(--text);letter-spacing:-1px" id="f-assets">$0</div>
+    <div style="font-size:13px;margin-top:4px" id="f-nw-change"></div>
+  </div>
+  <div style="height:160px;margin:12px 0 8px"><canvas id="nw-chart"></canvas></div>
+
+  <!-- Asset class quick summary — Coinbase style rows -->
+  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:0.5px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Portfolio</div>
+      <div style="font-size:11px;color:var(--text3)">Value</div>
     </div>
-    <div style="margin-bottom:10px" id="f-equity-bar"></div>
-    <div style="height:140px"><canvas id="nw-chart"></canvas></div>
+    <div id="portfolio-summary"></div>
+    <!-- Totals row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:0.5px solid var(--border);margin-top:2px">
+      <div style="font-size:13px;font-weight:600;color:var(--text2)">Net worth</div>
+      <div style="font-size:14px;font-weight:700;font-family:Space Mono,monospace;color:var(--blue)" id="f-total">$0</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 14px 12px">
+      <div style="font-size:12px;color:var(--text3)">Total debt</div>
+      <div style="font-size:13px;font-weight:600;font-family:Space Mono,monospace;color:var(--red)" id="f-debt">$0</div>
+    </div>
   </div>
 
   <!-- Assets sectioned layout -->
@@ -786,7 +790,7 @@ let state={
   foodLog: S.get('foodLog')||{},
   gymLog:  S.get('gymLog')||[],
   gymDraft:S.get('gymDraft')||{},
-  exercisePresets:S.get('exercisePresets')||['Barbell Bench Press','Squat','Deadlift','Overhead Press','Pull-ups','Barbell Row','Dumbbell Curl','Tricep Pushdown','Leg Press','Lat Pulldown'],
+  exercisePresets:S.get('exercisePresets')||['Barbell Bench Press','Barbell Row','Deadlift','Dumbbell Curl','Lat Pulldown','Leg Press','Overhead Press','Pull-ups','Squat','Tricep Pushdown'],
   uploads: S.get('uploads')||[],
   accounts:S.get('accounts')||[],
   loans:   S.get('loans')||[],
@@ -1054,7 +1058,7 @@ function renderPerSetEditor(){
           <span style="font-size:11px;color:var(--text2)">Weight</span>
           <span style="font-size:13px;font-weight:700;font-family:Space Mono,monospace;color:var(--purple)" id="ps-w-disp-${i}">${s.weight} lbs</span>
         </div>
-        <input type="range" min="5" max="250" step="5" value="${s.weight}"
+        <input type="range" min="0" max="500" step="2.5" value="${s.weight}"
           id="ps-w-slider-${i}"
           style="width:100%;accent-color:var(--purple)"
           oninput="currentSets[${i}].weight=this.value;document.getElementById('ps-w-disp-${i}').textContent=this.value+' lbs';cascadeWeight(${i}+1,this.value)"/>
@@ -1801,7 +1805,7 @@ function renderAll(){
   const netWorth=totalAssetVal-totalLoanVal;
   const dnw=document.getElementById('d-networth');if(dnw)dnw.textContent=fmtUSD(netWorth);
   const ftot=document.getElementById('f-total');if(ftot)ftot.textContent=fmtUSD(netWorth);
-  const faEl=document.getElementById('f-assets');if(faEl)faEl.textContent=fmtUSD(totalAssetVal);
+  const faEl=document.getElementById('f-assets');if(faEl)faEl.textContent='$'+fmt(totalAssetVal);
   const fdEl=document.getElementById('f-debt');if(fdEl)fdEl.textContent=fmtUSD(totalLoanVal);
 
   // Gym dashboard
@@ -1867,7 +1871,7 @@ function renderAll(){
   if(expl){
     expl.innerHTML=state.exercisePresets.length===0
       ?'<div class="empty">Add exercises below to build your preset list</div>'
-      :state.exercisePresets.map(name=>`<div class="list-item">
+      :[...state.exercisePresets].sort((a,b)=>a.localeCompare(b)).map(name=>`<div class="list-item">
         <div class="list-info" style="cursor:pointer" onclick="selectExercise('${name.replace(/'/g,"\'")}')">
           <div class="list-name">${name}</div>
           <div class="list-sub" style="color:var(--purple)">tap to log →</div>
@@ -2044,6 +2048,33 @@ function renderAll(){
     return`<span style="color:${col}">${chg>=0?'+':''}${fmtUSD(chg)} (${chg>=0?'+':''}${pct}%)</span>`;
   }
 
+  // Portfolio summary rows — Coinbase style
+  const summaryEl=document.getElementById('portfolio-summary');
+  if(summaryEl){
+    const rows=[
+      {label:'Crypto',val:crypTotal,chg:crypDayChg,color:'#fbbf24',icon:'₿'},
+      {label:'Stocks',val:stokTotal,chg:stokDayChg,color:'#60a5fa',icon:'📈'},
+      {label:'Real Estate',val:reTotal,chg:0,color:'#a78bfa',icon:'🏠'},
+      {label:'Possessions',val:physTotal,chg:0,color:'#22d3ee',icon:'💎'},
+      {label:'Cash & other',val:cashTotal,chg:0,color:'#34d399',icon:'🏦'},
+    ].filter(r=>r.val>0);
+    summaryEl.innerHTML=rows.map(r=>{
+      const chgColor=r.chg>0?'#34d399':r.chg<0?'#f87171':'var(--text3)';
+      const chgStr=r.chg!==0?(r.chg>0?'↑':'↓')+fmtUSD(Math.abs(r.chg)):'+$0.00';
+      const pct=r.val>0&&r.chg?((r.chg/r.val)*100).toFixed(2):'0.00';
+      return`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:${r.color}20;display:flex;align-items:center;justify-content:center;font-size:16px">${r.icon}</div>
+          <div style="font-size:15px;font-weight:500;color:var(--text)">${r.label}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:600;font-family:Space Mono,monospace;color:var(--text)">$${fmt(r.val)}</div>
+          ${r.chg!==0?`<div style="font-size:11px;color:${chgColor}">${r.chg>0?'↑':'↓'} $${fmt(Math.abs(r.chg))} (${pct}%)</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
   // Show/hide sections
   const _sc=document.getElementById('section-crypto');if(_sc)_sc.style.display=cryptoA.length?'block':'none';
   const _ss=document.getElementById('section-stock');if(_ss)_ss.style.display=stockA.length?'block':'none';
@@ -2091,23 +2122,17 @@ function renderAll(){
   if(realEstA.length)drawSparkline('chart-realestate','#a78bfa',reTotal);
   if(physA.length)drawSparkline('chart-physical','#22d3ee',physTotal);
   if(cashA.length)drawSparkline('chart-cash','#34d399',cashTotal);
-  // Top chart: 3 lines — net worth (blue), assets (green), debt (red)
+  // Top chart: single green assets line — Coinbase style
   if(document.getElementById('nw-chart')){
     if(state.nwHistory.length>0){
       const hist=state.nwHistory.slice(-60);
       const labels=hist.map(h=>h.date.slice(5));
-      const nwData=hist.map(h=>h.value);
-      // Estimate assets and debt from history using today's ratio
-      const assetRatio=totalAssetVal>0?totalAssetVal/(netWorth||1):1;
-      const debtRatio=totalLoanVal>0?totalLoanVal/(totalAssetVal||1):0;
-      const assetData=hist.map(h=>Math.round(Math.abs(h.value)*(assetRatio)));
-      const debtData=hist.map(h=>Math.round(assetData[hist.indexOf(h)]*debtRatio));
+      // Estimate total assets from NW history using today's debt offset
+      const assetData=hist.map(h=>Math.round(h.value+totalLoanVal));
       const pr=hist.length<20?3:0;
       makeChart('nw-chart','line',labels,[
-        {label:'Net Worth',data:nwData,borderColor:'#60a5fa',backgroundColor:'transparent',borderWidth:2.5,pointRadius:pr,tension:.4,fill:false},
-        {label:'Assets',data:assetData,borderColor:'#34d399',backgroundColor:'transparent',borderWidth:2,pointRadius:pr,tension:.4,fill:false},
-        {label:'Debt',data:debtData,borderColor:'#f87171',backgroundColor:'transparent',borderWidth:2,pointRadius:pr,tension:.4,fill:false}
-      ],{plugins:{legend:{display:true,position:'bottom',labels:{color:'#888',font:{size:10},boxWidth:20,padding:8}}}});
+        {data:assetData,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.08)',borderWidth:2.5,pointRadius:pr,tension:.4,fill:true}
+      ],{plugins:{legend:{display:false}},scales:{x:{display:true,grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#444466',font:{size:9},maxTicksLimit:5}},y:{display:true,grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#444466',font:{size:9},maxTicksLimit:4,callback:v=>'$'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}}});
     } else {
       if(chartInstances['nw-chart'])chartInstances['nw-chart'].destroy();
     }
